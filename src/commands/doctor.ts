@@ -136,6 +136,16 @@ export {
   checkCycleFreshness,
 } from './doctor/checks/consolidation-cycle.ts';
 import { dbRepairRecurrenceCheck, pgliteScaleCheck } from './doctor/checks/engine-fit.ts';
+import { checkCycleBudgetStarvation } from './doctor/checks/cycle-budget.ts';
+import { checkMisconfiguredSources } from './doctor/checks/source-config.ts';
+import { checkPoolerPacing } from './doctor/checks/pooler-pacing.ts';
+import { checkAutopilotWrapper } from './doctor/checks/autopilot-wrapper.ts';
+import { checkSkillLaneDuplicates } from './doctor/checks/skill-lanes.ts';
+export { checkCycleBudgetStarvation, computeCycleBudgetStarvationCheck } from './doctor/checks/cycle-budget.ts';
+export { checkMisconfiguredSources, computeMisconfiguredSourcesCheck } from './doctor/checks/source-config.ts';
+export { checkPoolerPacing, computePoolerPacingCheck } from './doctor/checks/pooler-pacing.ts';
+export { checkAutopilotWrapper, computeAutopilotWrapperCheck } from './doctor/checks/autopilot-wrapper.ts';
+export { checkSkillLaneDuplicates, computeSkillLaneDuplicatesCheck } from './doctor/checks/skill-lanes.ts';
 import { classifyPgAccessError } from '../core/pg-access-classify.ts';
 export { dbRepairRecurrenceCheck, pgliteScaleCheck } from './doctor/checks/engine-fit.ts';
 export {
@@ -1633,6 +1643,15 @@ export async function buildChecks(
   } catch {
     // Best-effort environment check; never block doctor.
   }
+
+  // 3f-bis. autopilot_wrapper_stale — daemon wrapper predates the env-file
+  // lane (self-upgrade swaps the binary, never the wrapper). Engine-free.
+  progress.heartbeat('autopilot_wrapper_stale');
+  { const w = checkAutopilotWrapper(); if (w) checks.push(w); }
+  // 3f-ter. skill_lane_duplicates — same skill name loadable from two Claude
+  // Code lanes (bridge dir + plugin snapshot). Engine-free, local-only.
+  progress.heartbeat('skill_lane_duplicates');
+  { const d = checkSkillLaneDuplicates(); if (d) checks.push(d); }
 
   // 3g. pglite_leftovers (#3856). A pglite -> postgres migration leaves the
   // old engine store (`brain.pglite/`) under the gbrain home forever — dead
@@ -3967,6 +3986,14 @@ export async function buildChecks(
     // per-source dispatch gate sees.
     progress.heartbeat('cycle_freshness');
     checks.push(await checkCycleFreshness(engine));
+    // cycle_budget_starvation — a phase budget-skipped N cycles in a row
+    // while cycle_freshness stays green (#4168 honest-skip follow-up).
+    progress.heartbeat('cycle_budget_starvation');
+    { const c = await checkCycleBudgetStarvation(engine); if (c) checks.push(c); }
+    // misconfigured_sources — config.remote_url on a clone gbrain doesn't own
+    // (the #1881 shape); doctor is the single surfacing point, local lane only.
+    progress.heartbeat('misconfigured_sources');
+    { const m = await checkMisconfiguredSources(engine); if (m) checks.push(m); }
     // Silent-failure batch (#2250 / #2784 / #2788): wrong-root import
     // duplicates, undeclared DB-only pages, collector-output-in-db_only.
     progress.heartbeat('content_hash_duplicates');
@@ -4011,6 +4038,9 @@ export async function buildChecks(
     // #2194 fix #5 — autopilot fan-out vs worker concurrency mismatch.
     progress.heartbeat('autopilot_fanout_concurrency');
     checks.push(await computeAutopilotFanoutConcurrencyCheck(engine));
+    // pooler_pacing — txn-mode pooler (port 6543) with pace mode off.
+    progress.heartbeat('pooler_pacing');
+    { const p = await checkPoolerPacing(engine); if (p) checks.push(p); }
     // v0.47 google connector: credential-vault health incl. the day-6
     // Testing-mode expiry warning (zero-network; live probes live in
     // `gbrain google status`).

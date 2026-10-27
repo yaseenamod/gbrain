@@ -69,6 +69,7 @@ export const BRAIN_CHECK_NAMES: ReadonlySet<string> = new Set([
   'conversation_format_coverage',
   'conversation_parser_probe_health',
   'cross_modal_modality_backfill',
+  'cycle_budget_starvation',
   'cycle_freshness',
   'dangling_aliases',
   'effective_date_health',
@@ -139,6 +140,7 @@ export const SKILL_CHECK_NAMES: ReadonlySet<string> = new Set([
   'memory_verbs_usage',
   'resolver_health',
   'retrieval_reflex_health',
+  'skill_lane_duplicates',
   // Harness hook adapters: per-channel push-context visibility (sibling of
   // retrieval_reflex_health — same "is my agent's context wiring live?" question).
   'volunteer_channels',
@@ -157,6 +159,7 @@ export const OPS_CHECK_NAMES: ReadonlySet<string> = new Set([
   'alternative_providers',
   'autopilot_fanout_concurrency',
   'autopilot_lock_scope',
+  'autopilot_wrapper_stale',
   'bootstrap_hook_schema_pairing',
   'bootstrap_harness_health',
   'bootstrap_hooks_heartbeat',
@@ -179,8 +182,10 @@ export const OPS_CHECK_NAMES: ReadonlySet<string> = new Set([
   'npm_squat',
   'oauth_client_scope_health',
   'oauth_confidential_client_health',
+  'misconfigured_sources',
   'orphan_clones',
   'pgbouncer_prepare',
+  'pooler_pacing',
   'pglite_data_dir',
   // db-availability loop: engine-fit + repair-recurrence signals.
   'pglite_scale',
