@@ -136,7 +136,7 @@
   **Where to start:** autopilot tick body next to the existing health probe.
   **Effort:** S.
 
-- [ ] **P3 — Doctor check for a stale (pre-env-lane) daemon wrapper.** **What:**
+- [x] **P3 — Doctor check for a stale (pre-env-lane) daemon wrapper.** DONE v0.47.6.0 (doctor-hardening wave). **What:**
   a doctor check that reads `<gbrainDir>/autopilot-run.sh` and warns when it
   lacks the env-file sourcing line (installed before v0.46.2x, binary upgraded,
   wrapper never regenerated). **Why:** self-upgrade swaps the binary but never
@@ -451,7 +451,7 @@
   warn text in src/commands/skillpack/harness.ts must move with it. **Why:**
   the biggest single unlock for cold-pull stubs. **Effort:** S (decision) +
   S (change). **Priority:** P2.
-- [ ] **P3 — duplicate-skill-name coexistence doctor check.** **What:** a
+- [x] **P3 — duplicate-skill-name coexistence doctor check.** DONE v0.47.6.0 (doctor-hardening wave). **What:** a
   doctor probe that detects the same skill name loadable from two lanes at
   once (marketplace plugin snapshot + a bridge install in
   ~/.claude/skills, or two persona variants) and names the lanes. The
@@ -579,7 +579,7 @@
 
 - [ ] **P3 — file the PGLite close()-deadlock upstream.** Verified: with any statement in flight, `db.close()` AND the in-flight query's promise both never settle (permanent, not slow). No prior report found upstream (searched 2026-08-16). Minimal repro exists in test/pglite-engine-disconnect.serial.test.ts invariant #6; extract into a standalone snippet for electric-sql/pglite.
 
-- [ ] **P2 — doctor check for repeated insufficient_cycle_budget skips.** Post-#4168 a brain whose earlier phases eat the whole job budget skips propose_takes EVERY cycle while cycle_freshness stays green ('partial' accepted) — silent starvation behind a healthy dashboard. Detect N consecutive skip reasons in recent autopilot-cycle results and surface a doctor warn with the raise-interval/anchor hint. Files: src/commands/doctor.ts, src/core/cycle/propose-takes.ts.
+- [x] **P2 — doctor check for repeated insufficient_cycle_budget skips.** DONE v0.47.6.0 (doctor-hardening wave). Post-#4168 a brain whose earlier phases eat the whole job budget skips propose_takes EVERY cycle while cycle_freshness stays green ('partial' accepted) — silent starvation behind a healthy dashboard. Detect N consecutive skip reasons in recent autopilot-cycle results and surface a doctor warn with the raise-interval/anchor hint. Files: src/commands/doctor.ts, src/core/cycle/propose-takes.ts.
 
 - [ ] **P3 — #4136 declined pages consume `--limit` slots on bounded runs.** The decline is deliberately non-terminal (no durable outcome row), so declined pages re-enter every enumeration as claimable and count against `opts.limit` (`processedPagesCount += claimable.length`, extract-conversation-facts.ts) — a bounded manual run over a corpus where declined pages sort ahead can spend its whole limit re-declining the same pages while fresh pages starve. The cycle backfill passes no limit (walltime-bounded), so production is unaffected. Fix: return a per-page declined marker from processPage through the pool result and exclude declines from processedPagesCount, or write a short-TTL outcome row. Found by the ship adversarial pass.
 
@@ -2308,7 +2308,7 @@ Deferred from the paced-backfill wave (CEO + eng review CLEARED). Core shipped:
 `db-pacer` + `pace-mode` wired into embed (CLI + shared core + `embed-backfill`
 job) and sync. See CLAUDE.md "Pace Mode".
 
-- [ ] **P2 — `doctor` pacing check (E2).** Detect a txn-mode pooler (port 6543)
+- [x] **P2 — `doctor` pacing check (E2).** DONE v0.47.6.0 (doctor-hardening wave). Detect a txn-mode pooler (port 6543)
   running unpaced bulk and recommend `--pace`; optionally correlate recent
   `minion_jobs` deaths with backfill windows. Where: `src/commands/doctor.ts`.
 - [ ] **P2 — `--pace=auto` autotuned thresholds (E3).** Derive `paceAtMs`/cap from
@@ -2638,7 +2638,7 @@ marker or exact default-location equality — via `isOwnedClone`). Deliberately 
 OUT of that PR. Codex outside-voice findings #5/#6. See plan + GSTACK REVIEW REPORT at
 `~/.claude/plans/system-instruction-you-are-working-golden-valiant.md`.
 
-- [ ] **P2 — `gbrain doctor` misconfigured-source check.** Flag every source row
+- [x] **P2 — `gbrain doctor` misconfigured-source check.** DONE v0.47.6.0 (doctor-hardening wave). Flag every source row
   where `config.remote_url` is set but `isOwnedClone(row)` is false (the shape that
   caused #1881: a federated row whose `local_path` is a user working tree). Print a
   one-time, actionable hint per row: drop `config.remote_url` to sync it read-only,

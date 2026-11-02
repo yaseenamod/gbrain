@@ -2,6 +2,68 @@
 
 All notable changes to GBrain will be documented in this file.
 
+## [0.47.6.0] - 2026-10-27
+
+**Doctor hardening wave — five silent-failure classes that used to hide
+behind a green dashboard now surface in `gbrain doctor`, each with a
+paste-ready fix.**
+
+### Added
+
+- **`cycle_budget_starvation`.** A cycle phase that keeps getting skipped
+  because earlier phases consume the whole autopilot-cycle budget used to be
+  invisible: the cycle still completed, so `cycle_freshness` stayed green
+  while the work never ran. Doctor now reads recent full-cycle results and
+  warns when the same phase is budget-skipped three cycles in a row, naming
+  the phase and the raise-interval fix. Threshold:
+  `GBRAIN_CYCLE_BUDGET_STARVATION_THRESHOLD`.
+- **`misconfigured_sources`.** A source whose `config.remote_url` points at a
+  directory gbrain doesn't own (your working tree, not a gbrain-managed
+  clone) syncs read-only and is never re-cloned or deleted — correct, but
+  silent. Doctor is now the single place that says so, with the same hint
+  sync's own error uses: drop `remote_url`, or re-add with `--url`.
+- **`pooler_pacing`.** On a transaction-mode pooler (port 6543) with pace
+  mode off, an unpaced `gbrain embed --stale` or large `gbrain sync` can
+  exhaust pooler slots and starve minion lock renewals. Doctor now pairs the
+  pooler sniff with the pace-mode resolution and recommends
+  `gbrain config set pace.mode balanced` (or `--pace`), citing recent
+  lock-renewal deaths as evidence when the queue has any.
+- **`autopilot_wrapper_stale`.** Self-upgrade swaps the binary but never the
+  daemon wrapper, so an install made before the env-file lane never sources
+  `<gbrain home>/env` — keys placed there never reach the daemon. Doctor now
+  detects a pre-env-lane wrapper (or one generated under a different
+  `GBRAIN_HOME`) and points at `gbrain autopilot --install`. Engine-free, so
+  it works with the database down.
+- **`skill_lane_duplicates`.** The same skill name loadable from two Claude
+  Code lanes at once (bridge install + marketplace plugin snapshot, or two
+  persona variants) means which copy wins is host-defined. Doctor now names
+  each duplicate and its lanes with the keep-one-lane fix. Closes the
+  skill-name half of the coexistence detection that previously covered the
+  MCP server name only.
+
+Each check lives in its own module under `src/commands/doctor/checks/` with
+a pure compute function and its own test suite; all five are registered in
+the category map (`brain_checks_score` / `category_scores` stay honest), and
+all are warn-level with `remediation_status: 'human_only'` — none feeds
+`--remediate`.
+
+## To take advantage of v0.47.6.0
+
+**Say to your agent:** *"upgrade gbrain and run the doctor"* — *"check my
+brain's health"* — your agent runs `gbrain upgrade` then `gbrain doctor` and
+acts on any new warning.
+
+1. **Upgrade and run the doctor:**
+   ```bash
+   gbrain upgrade
+   gbrain doctor
+   ```
+2. **If `autopilot_wrapper_stale` warns:** `gbrain autopilot --install`
+   rewrites the wrapper in place; the daemon's schedule entry is unchanged.
+3. **If `pooler_pacing` warns:** `gbrain config set pace.mode balanced`.
+4. **If `cycle_budget_starvation` warns:** raise the autopilot interval
+   (`gbrain autopilot --install --interval <seconds>`).
+
 ## [0.47.5.0] - 2026-08-29
 
 **Postgres brains created before v0.46.35.0 upgrade cleanly again — the
